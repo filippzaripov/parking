@@ -20,8 +20,17 @@ public class Transport {
         this.places = places;
     }
 
-    public Transport(TransportType type){
+    public Transport(TransportType type) {
         this.type = type;
+        if (type.equals(TransportType.Car)) {
+            this.places = 1;
+        } else {
+            this.places = 2;
+        }
     }
 
+    @Override
+    public String toString() {
+        return "Transport type : " + this.getType();
+    }
 }
