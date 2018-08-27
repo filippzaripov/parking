@@ -7,88 +7,86 @@ import com.filipp.parking.ParkingException;
 import com.filipp.parking.Transport;
 import com.filipp.parking.TransportType;
 import org.junit.Assert;
-import org.junit.*;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ParkingTest extends Assert {
 
-    public static volatile Parking parking = new Parking(20, 10);
-    public static volatile List<Transport> transports = new ArrayList();
-    private int carAmount = parking.getCarAmount();
-    private int truckAmount = parking.getTruckAmount();
-    private final int maxParkingTruckPlaces = parking.getMaxParkingTruckPlaces();
-    private final int maxParkingCarPlaces= parking.getMaxParkingCarPlaces();
-    private int freeCarParkingPlacesAmount = parking.getFreeCarParkingPlacesAmount();
-    private int freeTruckParkingPlacesAmount = parking.getFreeTruckParkingPlacesAmount();
-    private int allFreeParkingPlacesAmount = parking.getAllFreeParkingPlacesAmount();
+    private final int maxParkingTruckPlaces = 20;
+    private final int maxParkingCarPlaces = 10;
+    private Parking parking;
+    private List<Transport> transports = new ArrayList();
+    private Logger log = LoggerFactory.getLogger(ParkingTest.class);
+    private int carAmount;
+    private int truckAmount;
+    private int freeCarParkingPlacesAmount;
+    private int freeTruckParkingPlacesAmount;
+    private int allFreeParkingPlacesAmount;
 
-    @Before
-    public static List<Transport> fillTransportList() {
-        List<Transport> transports = new ArrayList<Transport>(100);
-        for (int i = 0; i < 100; i++) {
-            if ((int) (Math.random() * 100) % 2 == 0) {
-                transports.add(new Transport(TransportType. Car));
-            } else {
-                transports.add(new Transport(TransportType.Truck));
-            }
-        }
-        return transports;
+
+    @Test
+    public void testParkTransportToEmptyParking() throws ParkingException {
+        parking = new Parking(maxParkingCarPlaces, maxParkingTruckPlaces);
+        freeCarParkingPlacesAmount = parking.getFreeCarParkingPlacesAmount();
+        freeTruckParkingPlacesAmount = parking.getFreeTruckParkingPlacesAmount();
+        Transport transport = new Transport(TransportType.Car);
+        assertEquals(transport, parking.park(transport));
+        assertEquals(freeCarParkingPlacesAmount - 1, parking.getFreeCarParkingPlacesAmount());
+        transport = new Transport(TransportType.Truck);
+        assertEquals(transport, parking.park(transport));
+        assertEquals(freeTruckParkingPlacesAmount - 1, parking.getFreeTruckParkingPlacesAmount());
     }
 
     @Test
-    public void testParking() {
-        transports = fillTransportList();
+    public void testParkTransportToFullParking() throws ParkingException {
+        parking = new Parking(maxParkingCarPlaces, maxParkingTruckPlaces);
+        for (int i = 0; i < maxParkingCarPlaces; i++) {
+            parking.park(new Transport(TransportType.Car));
+        }
+        for (int i = 0; i < maxParkingTruckPlaces; i++) {
+            parking.park(new Transport(TransportType.Truck));
+        }
+        assertNull(parking.park(new Transport(TransportType.Car)));
+        assertNull(parking.park(new Transport(TransportType.Truck)));
+    }
 
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    for (int i = 0; i < 30; i++) {
-                        Thread.sleep(2000);
-                        int random = (int) (Math.random() * 99);
-                        Transport tr = transports.get(random);
-                        assertNotNull(tr);
-                        assertEquals(tr,parking.park(transports.get(random)));
+    @Test
+    public void testParkTruckOnCarPlace() throws ParkingException {
+        parking = new Parking(maxParkingCarPlaces, maxParkingTruckPlaces);
+        allFreeParkingPlacesAmount = parking.getAllFreeParkingPlacesAmount();
 
-                        if (tr.getType().equals(TransportType.Car)){
-                            assertEquals(carAmount + 1, parking.getCarAmount());
-                            carAmount++;
-                            assertEquals(freeCarParkingPlacesAmount-1, parking.getFreeCarParkingPlacesAmount());
-                            freeCarParkingPlacesAmount--;
-                            assertEquals(allFreeParkingPlacesAmount-1, parking.getAllFreeParkingPlacesAmount());
-                            allFreeParkingPlacesAmount--;
-                        }
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ParkingException e) {
-                    System.out.println();
-                    System.err.println(e);
-                }
-            }
+        Transport truck = new Transport(TransportType.Truck);
+        for (int i = 0; i < maxParkingTruckPlaces; i++) {
+            parking.park(new Transport(TransportType.Truck));
+        }
+        assertEquals(0, parking.getFreeTruckParkingPlacesAmount());
+        assertEquals(truck, parking.park(truck));
+    }
 
-        }).start();
+    @Test
+    public void testUnparkTransport() throws ParkingException {
+        parking = new Parking(maxParkingCarPlaces, maxParkingTruckPlaces);
+        Transport transport = new Transport(TransportType.Car);
+        for (int i = 0; i < maxParkingCarPlaces; i++) {
+            parking.park(new Transport(TransportType.Car));
+        }
+        for (int i = 0; i < maxParkingTruckPlaces; i++) {
+            parking.park(new Transport(TransportType.Truck));
+        }
+        assertEquals(transport, parking.unPark(transport));
+        transport = new Transport(TransportType.Truck);
+        assertEquals(transport, parking.unPark(transport));
+    }
 
-        new Thread(new Runnable() {
-            public void run() {
-
-                try {
-                    Thread.sleep(15000);
-                    for (int i = 0; i < 30; i++) {
-                        Thread.sleep(2000);
-                        int random = (int) (Math.random() * 99);
-                        parking.unPark(transports.get(random));
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ParkingException e) {
-                    System.out.println();
-                    System.err.println(e);
-                }
-            }
-
-        }).start();
+    @Test
+    public void testUnparkTransportFromEmptyParking() throws ParkingException {
+        parking = new Parking(maxParkingCarPlaces, maxParkingTruckPlaces);
+        assertNull(parking.unPark(new Transport(TransportType.Car)));
+        assertNull(parking.unPark(new Transport(TransportType.Truck)));
 
     }
 }
