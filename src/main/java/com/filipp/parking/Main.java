@@ -33,11 +33,7 @@ public class Main {
                     for (int i = 0; i < 30; i++) {
                         Thread.sleep(2000);
                         int random = (int) (Math.random() * 99);
-                        if (random % 2 == 0) {
-                            parking.park(transports.get(random));
-                        } else {
-                            parking.unPark(transports.get(random));
-                        }
+                        parking.park(transports.get(random));
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -51,15 +47,13 @@ public class Main {
 
         new Thread(new Runnable() {
             public void run() {
+
                 try {
+                    Thread.sleep(15000);
                     for (int i = 0; i < 30; i++) {
                         Thread.sleep(2000);
                         int random = (int) (Math.random() * 99);
-                        if (random % 2 == 0) {
-                            parking.park(transports.get(random));
-                        } else {
-                            parking.unPark(transports.get(random));
-                        }
+                        parking.unPark(transports.get(random));
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
